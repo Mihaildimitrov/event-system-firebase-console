@@ -76,13 +76,15 @@ signUpUserRequest.post('/', (req, res) => {
     let userLastName = req.body.userLastName;
     let userRole = req.body.userRole;
     let userImageUrl = req.body.userImageUrl;
+    let searchTerms = req.body.searchTerms;
     let createdUser = {
         uid: '',
         email: userEmail,
         first_name: userFirstName,
         last_name: userLastName,
         role: userRole,
-        user_image: userImageUrl
+        user_image: userImageUrl,
+        searchTerms: searchTerms
     };
 
     return admin.auth().createUser({
