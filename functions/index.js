@@ -108,6 +108,65 @@ signUpUserRequest.post('/', (req, res) => {
 });
 exports.signUpUser = functions.https.onRequest(signUpUserRequest);
 
+const signUpUserRequestV2 = express();
+signUpUserRequestV2.use(cors({
+    origin: true
+}));
+signUpUserRequestV2.post('/', (req, res) => {
+    console.log('|-----> Sign Up User Request 2 <-----|');
+    console.log(req.body);
+
+    let email = req.body.email;
+    let password = req.body.password;
+    let role = req.body.role;
+    let firstName = req.body.firstName || '';
+    let lastName = req.body.lastName || '';
+    let photo = req.body.photo || '';
+    let companyName = req.body.companyName || '';
+    let userSponsorLevel = req.body.userSponsorLevel || '';
+    let boothNumber = req.body.boothNumber || '';
+    let company = req.body.company || '';
+    let position = req.body.position || '';
+    let description = req.body.description || '';
+    let searchTerms = req.body.searchTerms || '';
+
+    let createdUser = {
+        uid: '',
+        email: email,
+        role: role,
+        first_name: firstName,
+        last_name: lastName,
+        user_image: photo,
+        company_name: companyName,
+        user_sponsor_level: userSponsorLevel,
+        booth_number: boothNumber,
+        company: company,
+        position: position,
+        description: description,
+        searchTerms: searchTerms
+    };
+
+    return admin.auth().createUser({
+        email: email,
+        password: password
+    }).then((user) => {
+        createdUser['uid'] = user.uid;
+        return admin.auth().setCustomUserClaims(user.uid, {
+            user_role: role
+        });
+    }).then(() => {
+        return addNewUserIntoFirestoreCollection(createdUser).then((data) => {
+            return res.send(resolveSuccess(createdUser, "Successfully created new user", "success/message"));
+        }).catch((error) => {
+            return res.send(catchError(error, 'Unsuccessfully creating new user!'));
+        });
+    }).catch((error) => {
+        console.log('error', error);
+        return res.send(catchError(error, 'Unsuccessfully creating new user!'));
+    });
+});
+exports.signUpUserV2 = functions.https.onRequest(signUpUserRequestV2);
+
 function addNewUserIntoFirestoreCollection(userObject) {
     return new Promise((resolve, reject) => {
         db.collection("users").doc(userObject.uid).set(userObject).then(res => { return resolve(true); }).catch(err => { return reject(new Error(err)); });
