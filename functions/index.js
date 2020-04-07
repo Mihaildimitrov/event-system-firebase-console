@@ -167,9 +167,39 @@ signUpUserRequestV2.post('/', (req, res) => {
 });
 exports.signUpUserV2 = functions.https.onRequest(signUpUserRequestV2);
 
+const deleteUserRequest = express();
+deleteUserRequest.use(cors({
+    origin: true
+}));
+deleteUserRequest.post('/', (req, res) => {
+    console.log('|-----> Delete User Request <-----|');
+    console.log(req.body);
+
+    let userId = req.body.userId;
+
+    return admin.auth().deleteUser(userId)
+        .then(function() {
+            return deleteUserFromFirestoreCollection(userId).then((data) => {
+                return res.send(resolveSuccess(userId, "Successfully delete user", "success/message"));
+            }).catch((error) => {
+                return res.send(catchError(error, 'Unsuccessfully delete user!'));
+            });
+        })
+        .catch(function(error) {
+            return res.send(catchError(error, 'Unsuccessfully delete new user!'));
+        });
+});
+exports.deleteUser = functions.https.onRequest(deleteUserRequest);
+
 function addNewUserIntoFirestoreCollection(userObject) {
     return new Promise((resolve, reject) => {
         db.collection("users").doc(userObject.uid).set(userObject).then(res => { return resolve(true); }).catch(err => { return reject(new Error(err)); });
+    });
+}
+
+function deleteUserFromFirestoreCollection(userId) {
+    return new Promise((resolve, reject) => {
+        db.collection("users").doc(userId).delete().then(res => { return resolve(true); }).catch(err => { return reject(new Error(err)); });
     });
 }
 
